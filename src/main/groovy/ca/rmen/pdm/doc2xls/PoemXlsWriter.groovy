@@ -39,7 +39,6 @@ class PoemXlsWriter {
             sheet.addCell(new Label(col++, row, poem.content, cellFormat));
             sheet.addCell(new Label(col++, row, poem.date, cellFormat));
             sheet.addCell(new Label(col, row, poem.location, cellFormat));
-            println "added cell for ${poem.title} on row ${row}"
         }
 
         workbook.write()
