@@ -13,7 +13,8 @@ import jxl.write.WritableWorkbook;
 class PoemXlsWriter {
     static void write(String path, Poem[] poems) {
 
-        WritableWorkbook workbook = Workbook.createWorkbook(new File(path))
+        File file = new File(path)
+        WritableWorkbook workbook = Workbook.createWorkbook(file)
         WritableSheet sheet = workbook.createSheet("Poem", 0)
         sheet.insertRow(0)
         sheet.getSettings().setVerticalFreeze(1)
@@ -43,5 +44,6 @@ class PoemXlsWriter {
 
         workbook.write()
         workbook.close()
+        println "Wrote file ${file.getAbsolutePath()}"
     }
 }
