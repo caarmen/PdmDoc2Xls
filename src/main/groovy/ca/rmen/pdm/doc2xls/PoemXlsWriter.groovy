@@ -1,4 +1,4 @@
-package ca.rmen.fah
+package ca.rmen.pdm.doc2xls
 
 import jxl.Workbook
 import jxl.format.CellFormat

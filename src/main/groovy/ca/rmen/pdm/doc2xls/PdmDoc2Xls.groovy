@@ -1,9 +1,9 @@
-package ca.rmen.fah
+package ca.rmen.pdm.doc2xls
 
 /**
  * Created by calvarez on 28/02/15.
  */
-class Main {
+class PdmDoc2Xls {
     static main(args) {
         def inputFileName = args[0]
         def outputFileName = args[1]

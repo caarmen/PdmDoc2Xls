@@ -1,6 +1,6 @@
 apply plugin: 'groovy'
 apply plugin:'application'
-mainClassName = "ca.rmen.fah.Main"
+mainClassName = "ca.rmen.pdm.doc2xls.PdmDoc2Xls"
 
 repositories {
     mavenCentral()
