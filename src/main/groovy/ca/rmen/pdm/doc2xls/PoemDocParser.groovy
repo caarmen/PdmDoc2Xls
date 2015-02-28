@@ -6,7 +6,7 @@ package ca.rmen.pdm.doc2xls
 class PoemDocParser {
 
     private static String extractPageId(String input) {
-        def pattern = ~/^([a-z]) *[–-] (\p{L}*) de ([a-z]+) de ([0-9]{4})/
+        def pattern = ~/^([a-z]) *[–-] (\p{L}*) de (\p{L}+) de ([0-9]{4})/
         def matcher = pattern.matcher(input)
         if (matcher.matches())
             return matcher.group(4) + "-" + matcher.group(3) + "-" + matcher.group(1)
@@ -14,7 +14,7 @@ class PoemDocParser {
     }
 
     private static String extractBreveriaId(String input) {
-        def pattern = ~/^[0-9]{4}$/
+        def pattern = ~/^[0-9]+$/
         def matcher = pattern.matcher(input.trim())
         if (matcher.matches())
             return input
@@ -22,7 +22,7 @@ class PoemDocParser {
     }
 
     private static String[] extractSonnetId(String input) {
-        def pattern = ~/^([0-9]{4}) [–-] (.*)$/
+        def pattern = ~/^([0-9]+) [–-] (.*)$/
         def matcher = pattern.matcher(input.trim())
         if (matcher.matches())
             return [matcher.group(1), matcher.group(2)]
@@ -30,7 +30,7 @@ class PoemDocParser {
     }
 
     private static String[] extractLocationDate(String input) {
-        def pattern = ~/^([\p{L} ]+)[\.,]? ([0-9]+) de (\p{L}*) (de )?([0-9]{4})[\. ]*/
+        def pattern = ~/^([\p{L} \(\)]+)[\.,]? ([0-9]+) de (\p{L}*) (de )?([0-9]{4})[\. ]*/
         def matcher = pattern.matcher(input)
         if (matcher.matches())
             return [matcher.group(1), matcher.group(5) + "-" + matcher.group(3) + "-" + matcher.group(2)]
