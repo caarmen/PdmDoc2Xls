@@ -1,11 +1,29 @@
 apply plugin: 'groovy'
+apply plugin:'application'
+mainClassName = "ca.rmen.fah.Main"
 
 repositories {
     mavenCentral()
 }
 
+configurations {
+    ivy
+}
+
 dependencies {
+    ivy "org.apache.ivy:ivy:2.3.0"
+    compile "org.codehaus.groovy:groovy-all:2.4.1"
     compile ('net.sourceforge.jexcelapi:jxl:2.6.12') {
         exclude group: "log4j"
     }
+}
+
+tasks.withType(GroovyCompile) {
+    groovyClasspath += configurations.ivy
+}
+
+run {  
+    if ( project.hasProperty("appArgs") ) {  
+        args Eval.me(appArgs)  
+    }  
 }
