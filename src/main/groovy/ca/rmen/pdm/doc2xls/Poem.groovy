@@ -15,8 +15,12 @@ class Poem {
     String date
     String location
 
-    Poem() {
-        content = ""
+    Poem(PoemType type, String id, String pageId, String title) {
+        this.type = type
+        this.id = id
+        this.pageId = pageId
+        this.title = title
+        this.content = ""
     }
 
     @Override

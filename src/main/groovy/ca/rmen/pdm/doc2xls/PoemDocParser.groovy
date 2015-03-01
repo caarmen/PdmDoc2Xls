@@ -51,79 +51,13 @@ class PoemDocParser {
         return true;
     }
 
-    static Poem[] parse(String textFileName) {
-        def file = new File(textFileName)
-        def poems = []
-        file.withReader { reader ->
-            def line
-            Poem curPoem
-            String curPageId
-            int i;
-            while ((line = reader.readLine()) != null) {
-                i++;
-                String pageId = extractPageId(line)
-                // This is the beginning of a new page
-                if (pageId != null) {
-                    curPageId = pageId
-                } else if (curPageId != null) {
-                    String breveriaId = extractBreveriaId(line)
-                    if (breveriaId != null) {
-                        // This is a new breveria
-                        curPoem = new Poem()
-                        curPoem.type = Poem.PoemType.BREVERIA
-                        curPoem.id = breveriaId
-                        curPoem.title = "Brevería ${breveriaId}"
-                        curPoem.pageId = curPageId
-                        poems.add(curPoem)
-                    } else {
-                        String[] sonnetId = extractSonnetId(line)
-                        if (sonnetId != null) {
-                            // This is a new sonnet
-                            curPoem = new Poem()
-                            curPoem.type = Poem.PoemType.SONNET
-                            curPoem.id = sonnetId[0]
-                            curPoem.title = sonnetId[1]
-                            curPoem.pageId = curPageId
-                            poems.add(curPoem)
-                        } else if (curPoem != null) {
-                            String[] locationDate = extractLocationDate(line)
-                            if (locationDate != null) {
-                                // This is the timestamp of the poem
-                                // (the end of the poem)
-                                curPoem.location = locationDate[0]
-                                curPoem.date = locationDate[1]
-                                curPoem = null
-                            } else if (curPoem != null) {
-                                if (!line.isEmpty()
-                                        && curPoem.type == Poem.PoemType.BREVERIA
-                                        && curPoem.content ==~ /(?s)^.*( *\n){4}$/) {
-                                    // older documents may have a poem after a breveria
-                                    // without any indication except multiple blank lines
-                                    println "new poem ${line}"
-                                    curPoem = new Poem()
-                                    curPoem.type = Poem.PoemType.POEM
-                                    curPoem.title = line
-                                    curPoem.pageId = curPageId
-                                    poems.add(curPoem)
-                                } else {
-                                    // This is content of the poem
-                                    curPoem.content += line + "\n"
-                                }
-                            }
-                        } else if (isPotentialPoemTitle(line)) {
-                            curPoem = new Poem()
-                            curPoem.type = Poem.PoemType.POEM
-                            curPoem.title = line
-                            curPoem.pageId = curPageId
-                            poems.add(curPoem)
-                        }
-                    }
-                }
-            }
-        }
+    private static void cleanupPoems(List<Poem> poems) {
         for (Poem poem : poems) {
             poem.content = poem.content.trim()
         }
+    }
+
+    private static void removeBogusPoems(List<Poem> poems) {
         for (Iterator<Poem> it = poems.iterator(); it.hasNext();) {
             Poem poem = it.next();
             if (poem.type != Poem.PoemType.POEM)
@@ -145,6 +79,63 @@ class PoemDocParser {
                 it.remove()
             }
         }
+    }
+
+    static Poem[] parse(String textFileName) {
+        def file = new File(textFileName)
+        def poems = []
+        file.withReader { reader ->
+            def line
+            Poem curPoem
+            String curPageId
+            while ((line = reader.readLine()) != null) {
+                String pageId = extractPageId(line)
+                // This is the beginning of a new page
+                if (pageId != null) {
+                    curPageId = pageId
+                } else if (curPageId != null) {
+                    String breveriaId = extractBreveriaId(line)
+                    if (breveriaId != null) {
+                        // This is a new breveria
+                        curPoem = new Poem(Poem.PoemType.BREVERIA, breveriaId, curPageId, "Brevería ${breveriaId}")
+                        poems.add(curPoem)
+                    } else {
+                        String[] sonnetId = extractSonnetId(line)
+                        if (sonnetId != null) {
+                            // This is a new sonnet
+                            curPoem = new Poem(Poem.PoemType.SONNET, sonnetId[0], curPageId, sonnetId[1])
+                            poems.add(curPoem)
+                        } else if (curPoem != null) {
+                            String[] locationDate = extractLocationDate(line)
+                            if (locationDate != null) {
+                                // This is the timestamp of the poem
+                                // (the end of the poem)
+                                curPoem.location = locationDate[0]
+                                curPoem.date = locationDate[1]
+                                curPoem = null
+                            } else if (curPoem != null) {
+                                if (!line.isEmpty()
+                                        && curPoem.type == Poem.PoemType.BREVERIA
+                                        && curPoem.content ==~ /(?s)^.*( *\n){4}$/) {
+                                    // older documents may have a poem after a breveria
+                                    // without any indication except multiple blank lines
+                                    curPoem = new Poem(Poem.PoemType.POEM, null, curPageId, line)
+                                    poems.add(curPoem)
+                                } else {
+                                    // This is content of the poem
+                                    curPoem.content += line + "\n"
+                                }
+                            }
+                        } else if (isPotentialPoemTitle(line)) {
+                            curPoem = new Poem(Poem.PoemType.POEM, null, curPageId, line)
+                            poems.add(curPoem)
+                        }
+                    }
+                }
+            }
+        }
+        cleanupPoems(poems)
+        removeBogusPoems(poems)
         return poems
     }
 }
