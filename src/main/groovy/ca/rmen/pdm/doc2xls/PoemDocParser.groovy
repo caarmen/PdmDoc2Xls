@@ -12,16 +12,20 @@ class PoemDocParser {
             return matcher.group(4) + "-" + matcher.group(3) + "-" + matcher.group(1)
 
         // Older documents (early 2001):
-        pattern = ~/^Poemas de (\p{L}+) de ([0-9]{4})/
+        pattern = ~/^Poemas de (\p{L}+) (de )?([0-9]{4})/
         matcher = pattern.matcher(input)
         if (matcher.matches())
-            return matcher.group(2) + "-" + matcher.group(1)
+            return matcher.group(3) + "-" + matcher.group(1)
 
         // Even older:
         pattern = ~/^.*\((\p{L}+) (199[89])\)\s*$/
         matcher = pattern.matcher(input)
         if (matcher.matches())
             return matcher.group(2) + "-" + matcher.group(1)
+
+        // Special case:
+        if(input.equals("Haikú"))
+            return input
         return null
     }
 
@@ -34,7 +38,7 @@ class PoemDocParser {
     }
 
     private static String[] extractSonnetId(String input) {
-        def pattern = ~/^([0-9]+) ?[–-] (.*)$/
+        def pattern = ~/^([0-9]+) ?[–-] ?(.*)$/
         def matcher = pattern.matcher(input.trim())
         if (matcher.matches())
             return [matcher.group(1), matcher.group(2)]
@@ -58,6 +62,8 @@ class PoemDocParser {
         for (Poem poem : poems) {
             poem.content = poem.content.trim()
         }
+
+
     }
 
     private static void removeBogusPoems(List<Poem> poems) {
@@ -99,8 +105,8 @@ class PoemDocParser {
                 } else if (curPageId != null) {
                     String breveriaId = extractBreveriaId(line)
                     if (breveriaId != null) {
-                        // This is a new breveria
-                        curPoem = new Poem(Poem.PoemType.BREVERIA, breveriaId, curPageId, "Brevería ${breveriaId}")
+                        // This is a new breveria (or in rare cases, haiku)
+                        curPoem = new Poem(curPageId == "Haikú" ? Poem.PoemType.HAIKU : Poem.PoemType.BREVERIA, breveriaId, curPageId, "Brevería ${breveriaId}")
                         poems.add(curPoem)
                     } else {
                         String[] sonnetId = extractSonnetId(line)

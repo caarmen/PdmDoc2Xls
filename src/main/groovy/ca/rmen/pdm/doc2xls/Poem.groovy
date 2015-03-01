@@ -4,7 +4,7 @@ package ca.rmen.pdm.doc2xls
  */
 class Poem {
     enum PoemType {
-        BREVERIA, SONNET, POEM
+        BREVERIA, SONNET, HAIKU, POEM
     }
     PoemType type
     String id
