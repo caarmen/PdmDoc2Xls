@@ -59,7 +59,6 @@ class PoemDocParser {
             Poem curPoem
             String curPageId
             int i;
-            int blankContentLineCount = 0;
             while ((line = reader.readLine()) != null) {
                 i++;
                 String pageId = extractPageId(line)
@@ -75,7 +74,6 @@ class PoemDocParser {
                         curPoem.id = breveriaId
                         curPoem.title = "Brevería ${breveriaId}"
                         curPoem.pageId = curPageId
-                        blankContentLineCount = 0
                         poems.add(curPoem)
                     } else {
                         String[] sonnetId = extractSonnetId(line)
@@ -86,7 +84,6 @@ class PoemDocParser {
                             curPoem.id = sonnetId[0]
                             curPoem.title = sonnetId[1]
                             curPoem.pageId = curPageId
-                            blankContentLineCount = 0
                             poems.add(curPoem)
                         } else if (curPoem != null) {
                             String[] locationDate = extractLocationDate(line)
@@ -96,28 +93,21 @@ class PoemDocParser {
                                 curPoem.location = locationDate[0]
                                 curPoem.date = locationDate[1]
                                 curPoem = null
-                                blankContentLineCount = 0
                             } else if (curPoem != null) {
-                                if (line.trim().isEmpty()) {
-                                    blankContentLineCount++
-                                    // This is content of the poem
-                                    curPoem.content += line + "\n"
-                                } else {
+                                if (!line.isEmpty()
+                                        && curPoem.type == Poem.PoemType.BREVERIA
+                                        && curPoem.content ==~ /(?s)^.*( *\n){4}$/) {
                                     // older documents may have a poem after a breveria
                                     // without any indication except multiple blank lines
-                                    if (blankContentLineCount >= 4
-                                            && curPoem.type == Poem.PoemType.BREVERIA) {
-                                        println "new poem ${line}"
-                                        curPoem = new Poem()
-                                        curPoem.type = Poem.PoemType.POEM
-                                        curPoem.title = line
-                                        curPoem.pageId = curPageId
-                                        poems.add(curPoem)
-                                    } else {
-                                        // This is content of the poem
-                                        curPoem.content += line + "\n"
-                                    }
-                                    blankContentLineCount = 0
+                                    println "new poem ${line}"
+                                    curPoem = new Poem()
+                                    curPoem.type = Poem.PoemType.POEM
+                                    curPoem.title = line
+                                    curPoem.pageId = curPageId
+                                    poems.add(curPoem)
+                                } else {
+                                    // This is content of the poem
+                                    curPoem.content += line + "\n"
                                 }
                             }
                         } else if (isPotentialPoemTitle(line)) {
@@ -125,7 +115,6 @@ class PoemDocParser {
                             curPoem.type = Poem.PoemType.POEM
                             curPoem.title = line
                             curPoem.pageId = curPageId
-                            blankContentLineCount = 0
                             poems.add(curPoem)
                         }
                     }
