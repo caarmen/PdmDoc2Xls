@@ -43,14 +43,6 @@ class PoemDocParser {
         return null
     }
 
-    private static boolean isPotentialPoemTitle(String input) {
-        if (input.isEmpty()
-                || input ==~ /^ *Breverías *$/
-                || input ==~ /^ *Imagenes *$/)
-            return false;
-        return true;
-    }
-
     private static void cleanupPoems(List<Poem> poems) {
         for (Poem poem : poems) {
             poem.content = poem.content.trim()
@@ -126,7 +118,7 @@ class PoemDocParser {
                                     curPoem.content += line + "\n"
                                 }
                             }
-                        } else if (isPotentialPoemTitle(line)) {
+                        } else if (!line.isEmpty()) {
                             curPoem = new Poem(Poem.PoemType.POEM, null, curPageId, line)
                             poems.add(curPoem)
                         }
