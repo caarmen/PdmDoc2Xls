@@ -6,6 +6,10 @@ package ca.rmen.pdm.doc2xls
 class PoemDocParser {
 
     private static String extractPageId(String input) {
+        // Special bug cases:
+        if("4 – Cuarta de diciembre de 2009".equals(input))
+            input = "d – Cuarta de diciembre de 2009"
+
         def pattern = ~/^([a-z]) *[–-] (\p{L}*) de (\p{L}+) de ([0-9]{4})/
         def matcher = pattern.matcher(input)
         if (matcher.matches())
@@ -23,8 +27,10 @@ class PoemDocParser {
         if (matcher.matches())
             return matcher.group(2) + "-" + matcher.group(1)
 
-        // Special case:
-        if(input.equals("Haikú"))
+        // Special cases:
+        if (input.equals("Haikú"))
+            return input
+        else if(input.equals("Tankas"))
             return input
         return null
     }
@@ -38,7 +44,7 @@ class PoemDocParser {
     }
 
     private static String[] extractSonnetId(String input) {
-        def pattern = ~/^([0-9]+) ?[–-] ?(.*)$/
+        def pattern = ~/^([0-9]+) ?[–-] ?(.+)$/
         def matcher = pattern.matcher(input.trim())
         if (matcher.matches())
             return [matcher.group(1), matcher.group(2)]
@@ -46,21 +52,40 @@ class PoemDocParser {
     }
 
     private static String[] extractLocationDate(String input) {
-        def pattern = ~/^([\p{L} \(\)]+)[\.,]? ([0-9]+) de (\p{L}*) (de )?([0-9]{4})[\. ]*/
+        def pattern = ~/^([\p{L} \(\)]+)[\.,]? *([0-9]+) de *(\p{L}*),? (de )?([0-9]{4})[\.,\/ ]*/
         def matcher = pattern.matcher(input)
         if (matcher.matches())
             return [matcher.group(1), matcher.group(5) + "-" + matcher.group(3) + "-" + matcher.group(2)]
-        // One bug in 1998:
-        pattern = ~/Los Angeles, 21 de diciembre/
-        matcher = pattern.matcher(input)
-        if (matcher.matches())
-            return ["Los Angeles","1998-diciembre-21"]
+
+        // Special cases not easily handled with regex:
+        if("Los Angeles, Nochevieja de 2003 ".equals(input))
+            return ["Los Angeles", "2003-diciembre-31"]
+
+        // Some bugs
+        // One bug in 1998 where the year was not included:
+        if ("Los Angeles, 21 de diciembre".equals(input))
+            return ["Los Angeles", "1998-diciembre-21"]
+        // Date formatting bugs:
+        if ("Los Angeles, a 2 de diciembre de 2009".equals(input))
+            return ["Los Angeles", "2009-diciembre-2"]
+        if ("Los Angeles, 15 diciembre de 2010".equals(input))
+            return ["Los Angeles", "2010-diciembre-15"]
+
         return null
     }
 
     private static void cleanupPoems(List<Poem> poems) {
         for (Poem poem : poems) {
             poem.content = poem.content.trim()
+            if (poem.id != null)
+                poem.id = poem.id.trim()
+            // Special case
+            if(poem.type == Poem.PoemType.SONNET) {
+                if(poem.id == "704" || poem.id == "705") {
+                    poem.location = "Los Angeles"
+                    poem.date = "2003-enero-10"
+                }
+            }
         }
 
 
@@ -106,7 +131,15 @@ class PoemDocParser {
                     String breveriaId = extractBreveriaId(line)
                     if (breveriaId != null) {
                         // This is a new breveria (or in rare cases, haiku)
-                        curPoem = new Poem(curPageId == "Haikú" ? Poem.PoemType.HAIKU : Poem.PoemType.BREVERIA, breveriaId, curPageId, "Brevería ${breveriaId}")
+                        Poem.PoemType poemType;
+                        if("Haikú".equals(curPageId))
+                            poemType = Poem.PoemType.HAIKU
+                        else if("Tankas".equals(curPageId))
+                            poemType = Poem.PoemType.TANKA
+                        else
+                            poemType = Poem.PoemType.BREVERIA
+
+                        curPoem = new Poem(poemType, breveriaId, curPageId, "Brevería ${breveriaId}")
                         poems.add(curPoem)
                     } else {
                         String[] sonnetId = extractSonnetId(line)

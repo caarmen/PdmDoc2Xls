@@ -3,6 +3,7 @@ package ca.rmen.pdm.doc2xls
 import jxl.Workbook
 import jxl.format.CellFormat
 import jxl.write.Label
+import jxl.write.Number
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 
@@ -31,7 +32,9 @@ class PoemXlsWriter {
         for (Poem poem : poems) {
             sheet.insertRow(++row);
             col = 0;
-            sheet.addCell(new Label(col++, row, poem.id, cellFormat));
+            if (poem.id != null)
+                sheet.addCell(new Number(col, row, Integer.parseInt(poem.id)));
+            col++;
             sheet.addCell(new Label(col++, row, poem.type.name(), cellFormat));
             sheet.addCell(new Label(col++, row, poem.pageId, cellFormat));
             sheet.addCell(new Label(col++, row, poem.title, cellFormat));
