@@ -16,6 +16,12 @@ class PoemDocParser {
         matcher = pattern.matcher(input)
         if (matcher.matches())
             return matcher.group(2) + "-" + matcher.group(1)
+
+        // Even older:
+        pattern = ~/^.*\((\p{L}+) (199[89])\)\s*$/
+        matcher = pattern.matcher(input)
+        if (matcher.matches())
+            return matcher.group(2) + "-" + matcher.group(1)
         return null
     }
 
@@ -40,6 +46,11 @@ class PoemDocParser {
         def matcher = pattern.matcher(input)
         if (matcher.matches())
             return [matcher.group(1), matcher.group(5) + "-" + matcher.group(3) + "-" + matcher.group(2)]
+        // One bug in 1998:
+        pattern = ~/Los Angeles, 21 de diciembre/
+        matcher = pattern.matcher(input)
+        if (matcher.matches())
+            return ["Los Angeles","1998-diciembre-21"]
         return null
     }
 
