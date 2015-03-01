@@ -15,6 +15,12 @@ class PoemDocParser {
         if (matcher.matches())
             return matcher.group(4) + "-" + matcher.group(3) + "-" + matcher.group(1)
 
+        // Sonnets documents:
+        pattern = ~/^.*(Sonetos Nº [0-9]+ al Nº [0-9]+).*$/
+        matcher = pattern.matcher(input)
+        if (matcher.matches())
+            return matcher.group(1)
+
         // Older documents (early 2001):
         pattern = ~/^Poemas de (\p{L}+) (de )?([0-9]{4})/
         matcher = pattern.matcher(input)
@@ -31,10 +37,10 @@ class PoemDocParser {
         if (matcher.matches())
             return "19" + matcher.group(2) + "-" + matcher.group(1)
 
+
+
         // Special cases:
-        if (input.startsWith("Haikú"))
-            return input
-        else if (input.equals("Tankas"))
+        if (input.startsWith("Haikú") || input.equals("Tankas") || input.equals("Brisas del Alma"))
             return input
         return null
     }
@@ -61,6 +67,12 @@ class PoemDocParser {
         if (matcher.matches())
             return [matcher.group(1), matcher.group(5) + "-" + matcher.group(3) + "-" + matcher.group(2)]
 
+        // From 1997: date only
+        pattern = ~/^.*([0-9]+)-([0-9\p{L}]+)-([0-9]+)\s*$/
+        matcher = pattern.matcher(input)
+        if (matcher.matches())
+            return ["","19" + matcher.group(3) + "-" + matcher.group(2) + "-" + matcher.group(1)]
+
         // Special cases not easily handled with regex:
         if ("Los Angeles, Nochevieja de 2003 ".equals(input))
             return ["Los Angeles", "2003-diciembre-31"]
@@ -75,6 +87,7 @@ class PoemDocParser {
         if ("Los Angeles, 15 diciembre de 2010".equals(input))
             return ["Los Angeles", "2010-diciembre-15"]
 
+
         return null
     }
 
@@ -83,6 +96,9 @@ class PoemDocParser {
             poem.content = poem.content.trim()
             if (poem.id != null)
                 poem.id = poem.id.trim()
+            poem.title = poem.title.trim()
+            if(poem.location != null)
+                poem.location = poem.location.trim()
             // Special cases where incorrect info is in the doc
             if (poem.type == Poem.PoemType.SONNET) {
                 if (poem.id == "704" || poem.id == "705") {
@@ -100,6 +116,8 @@ class PoemDocParser {
                         (poem.date.startsWith("2012-enero")
                                 || poem.date.startsWith("2012-enaro"))) {
                     poem.id = "" + (Integer.parseInt(poem.id) + 300);
+                } else if ("Antonio Machado".equals(poem.title)) {
+                    poem.date = "1997-julio-24"
                 }
             } else if (poem.type == Poem.PoemType.POEM) {
                 if (poem.title == "Amedentrada") {
@@ -115,14 +133,14 @@ class PoemDocParser {
     private static void removeBogusPoems(List<Poem> poems) {
         for (Iterator<Poem> it = poems.iterator(); it.hasNext();) {
             Poem poem = it.next();
-            if (poem.type != Poem.PoemType.POEM)
-                continue
-            // In case we accidentally parsed something that shouldn't
-            // be a poem, remove it.
-            if (poem.location == null || poem.date == null) {
-                println("Removing poem ${poem}")
-                it.remove()
-                continue
+            if (poem.type == Poem.PoemType.POEM) {
+                // In case we accidentally parsed something that shouldn't
+                // be a poem, remove it.
+                if (poem.location == null || poem.date == null) {
+                    println("Removing poem ${poem}")
+                    it.remove()
+                    continue
+                }
             }
 
             // We assume real poems will have at least 4 lines of text.
