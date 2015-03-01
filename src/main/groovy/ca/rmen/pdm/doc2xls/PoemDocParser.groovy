@@ -7,7 +7,7 @@ class PoemDocParser {
 
     private static String extractPageId(String input) {
         // Special bug cases:
-        if("4 – Cuarta de diciembre de 2009".equals(input))
+        if ("4 – Cuarta de diciembre de 2009".equals(input))
             input = "d – Cuarta de diciembre de 2009"
 
         def pattern = ~/^([a-z]) *[–-] (\p{L}*) de (\p{L}+) de ([0-9]{4})/
@@ -22,15 +22,19 @@ class PoemDocParser {
             return matcher.group(3) + "-" + matcher.group(1)
 
         // Even older:
-        pattern = ~/^.*\((\p{L}+) (199[89])\)\s*$/
+        pattern = ~/^.*\((\p{L}+) (199[89])\)?\s*$/
         matcher = pattern.matcher(input)
         if (matcher.matches())
             return matcher.group(2) + "-" + matcher.group(1)
+        pattern = ~/^.*\((\p{L}+) (99)\)$/
+        matcher = pattern.matcher(input)
+        if (matcher.matches())
+            return "19" + matcher.group(2) + "-" + matcher.group(1)
 
         // Special cases:
-        if (input.equals("Haikú"))
+        if (input.startsWith("Haikú"))
             return input
-        else if(input.equals("Tankas"))
+        else if (input.equals("Tankas"))
             return input
         return null
     }
@@ -44,7 +48,7 @@ class PoemDocParser {
     }
 
     private static String[] extractSonnetId(String input) {
-        def pattern = ~/^([0-9]+) ?[–-] ?(.+)$/
+        def pattern = ~/^([0-9]+) *[–-] *(.+)$/
         def matcher = pattern.matcher(input.trim())
         if (matcher.matches())
             return [matcher.group(1), matcher.group(2)]
@@ -58,7 +62,7 @@ class PoemDocParser {
             return [matcher.group(1), matcher.group(5) + "-" + matcher.group(3) + "-" + matcher.group(2)]
 
         // Special cases not easily handled with regex:
-        if("Los Angeles, Nochevieja de 2003 ".equals(input))
+        if ("Los Angeles, Nochevieja de 2003 ".equals(input))
             return ["Los Angeles", "2003-diciembre-31"]
 
         // Some bugs
@@ -79,11 +83,28 @@ class PoemDocParser {
             poem.content = poem.content.trim()
             if (poem.id != null)
                 poem.id = poem.id.trim()
-            // Special case
-            if(poem.type == Poem.PoemType.SONNET) {
-                if(poem.id == "704" || poem.id == "705") {
+            // Special cases where incorrect info is in the doc
+            if (poem.type == Poem.PoemType.SONNET) {
+                if (poem.id == "704" || poem.id == "705") {
                     poem.location = "Los Angeles"
                     poem.date = "2003-enero-10"
+                } else if (poem.id == "1359") {
+                    poem.location = "Los Angeles"
+                    poem.date = "2005-octubre-25"
+                } else if (poem.id == "2437" && poem.title == "Surges de las tinieblas") {
+                    poem.id = "2737"
+                } else if (("2561".equals(poem.id)
+                        || "2562".equals(poem.id) || "2563".equals(poem.id)
+                        || "2564".equals(poem.id) || "2565".equals(poem.id))
+                        &&
+                        (poem.date.startsWith("2012-enero")
+                                || poem.date.startsWith("2012-enaro"))) {
+                    poem.id = "" + (Integer.parseInt(poem.id) + 300);
+                }
+            } else if (poem.type == Poem.PoemType.POEM) {
+                if (poem.title == "Amedentrada") {
+                    poem.type = Poem.PoemType.SONNET
+                    poem.id = "459"
                 }
             }
         }
@@ -132,9 +153,9 @@ class PoemDocParser {
                     if (breveriaId != null) {
                         // This is a new breveria (or in rare cases, haiku)
                         Poem.PoemType poemType;
-                        if("Haikú".equals(curPageId))
+                        if (curPageId.startsWith("Haikú"))
                             poemType = Poem.PoemType.HAIKU
-                        else if("Tankas".equals(curPageId))
+                        else if ("Tankas".equals(curPageId))
                             poemType = Poem.PoemType.TANKA
                         else
                             poemType = Poem.PoemType.BREVERIA
